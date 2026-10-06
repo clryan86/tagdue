@@ -1,0 +1,12 @@
+{
+  "name": "tagdue",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "TagDue - offline-first backflow test reports and due-date tracking",
+  "scripts": {
+    "test": "node --test tests/*.test.js",
+    "serve": "python3 -m http.server 8080",
+    "e2e": "node e2e/smoke.mjs"
+  }
+}
