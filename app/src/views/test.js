@@ -9,6 +9,8 @@ import { buildReportPDF, reportFilename, typeName } from '../pdf.js';
 const REASONS = ['Annual test', 'New installation', 'Replacement', 'Retest after repair', 'Requested by water system', 'Other'];
 const PARTS = ['Cleaned only', 'Rubber kit', 'Check disc', 'Seat', 'Spring', 'O-rings', 'Diaphragm', 'Relief valve kit', 'Air inlet kit', 'Shutoff valve', 'Assembly replaced'];
 
+const DRAFT_FIELDS = ['date', 'time', 'reason', 'testerId', 'gaugeId', 'linePressure', 'installedCorrectly', 'initial', 'repaired', 'parts', 'repairNotes', 'repairedBy', 'final', 'remarks', 'override', 'overrideReason', 'signature'];
+
 const draftKey = (existing, a) => (existing ? `tagdue-draft-edit-${existing.id}` : `tagdue-draft-new-${a.id}`);
 
 function readDraft(key) {
@@ -69,8 +71,13 @@ export function testEditView(id, assemblyId) {
   });
   const key = draftKey(existing, a);
   const draft = readDraft(key);
-  const restored = !!(draft && draft.t.assemblyId === a.id && draft.t.assemblyType === type && (!existing || draft.t.id === existing.id));
-  const t = restored ? draft.t : fresh();
+  // A draft is only the fields a person types. It never carries the report's
+  // identity, snapshot or filing details, and a draft older than the saved
+  // report is thrown away.
+  const restored = !!(draft && draft.t.assemblyId === a.id && draft.t.assemblyType === type && (!existing || (draft.t.id === existing.id && draft.savedAt >= (existing.updatedAt || 0))));
+  if (draft && !restored) dropDraft(key);
+  const t = fresh();
+  if (restored) for (const f of DRAFT_FIELDS) if (f in draft.t) t[f] = draft.t[f];
   t.parts = t.parts || [];
   t.final = t.final || {};
   t.initial = t.initial || {};
@@ -167,6 +174,10 @@ export function testEditView(id, assemblyId) {
     }
     if (o.overridden && !String(t.overrideReason || '').trim()) { error.textContent = 'Say why the result differs from the readings. It prints on the report.'; return; }
     if (!o.overridden) { t.override = ''; t.overrideReason = ''; }
+    // Filing details are set on the report screen; take them from the report as it is now.
+    const liveReport = existing ? byId('tests', existing.id) : null;
+    if (existing && !liveReport) { error.textContent = 'This report was deleted while the form was open.'; return; }
+    if (liveReport) { t.filedOn = liveReport.filedOn || ''; t.filingRef = liveReport.filingRef || ''; t.filingFee = liveReport.filingFee || ''; }
     const tester = testerFor(t.testerId);
     const gauge = gaugeFor(t.gaugeId);
     if (!tester || !gauge) { error.textContent = 'Choose a tester and a test kit.'; return; }

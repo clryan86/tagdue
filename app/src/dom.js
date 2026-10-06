@@ -74,16 +74,33 @@ export function field(label, obj, key, opts = {}) {
 }
 
 let toastTimer;
-export function toast(message) {
+/** A brief confirmation. Pass { error: true } for a failure: it stays until tapped. */
+export function toast(message, { error = false } = {}) {
   let t = document.getElementById('toast');
   if (!t) {
     t = h('div', { id: 'toast', role: 'status', 'aria-live': 'polite' });
+    t.addEventListener('click', () => t.classList.remove('show'));
     document.body.appendChild(t);
   }
-  t.textContent = message;
+  t.textContent = error ? message + ' Tap to close.' : message;
+  t.classList.toggle('error', error);
+  t.setAttribute('role', error ? 'alert' : 'status');
   t.classList.add('show');
   clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => t.classList.remove('show'), 2600);
+  if (!error) toastTimer = setTimeout(() => t.classList.remove('show'), 2600);
+}
+
+/** The first phone number in a free-text field, as digits for a tel: or sms: link. '' if none. */
+export function phoneDigits(text) {
+  const m = /\+?\d[\d\s().-]{5,}\d/.exec(String(text || ''));
+  if (!m) return '';
+  const digits = m[0].replace(/[^\d+]/g, '');
+  return digits.replace(/(?!^)\+/g, '');
+}
+
+/** A mailto: address part. Encodes anything that could add headers, but leaves the @ readable for mail apps. */
+export function mailAddress(email) {
+  return encodeURIComponent(String(email || '').trim()).replace(/%40/g, '@');
 }
 
 /** In-page confirmation. Resolves true when confirmed. */

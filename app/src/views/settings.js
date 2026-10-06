@@ -218,7 +218,16 @@ function dataView() {
     let data;
     try { data = JSON.parse(await file.text()); } catch { setChildren(result, h('div', { class: 'notice warn' }, 'That file could not be read. Choose a TagDue backup file ending in .json.')); return; }
     if (!(await confirmDialog({ title: 'Replace everything on this device?', body: `The backup from ${String(data.exportedAt || '').slice(0, 10) || 'an unknown date'} will replace the ${counts} here now.`, confirm: 'Replace with backup', danger: true }))) return;
-    try { await importAll(data); await refreshLicense(); toast('Backup restored'); navigate('/due'); } catch (err) { setChildren(result, h('div', { class: 'notice warn' }, err.message)); }
+    // Keep whichever licence key is valid for longest: the one on this device or the one in the backup.
+    let keep = state.settings.licenseKey || '';
+    try {
+      const mine = keep ? await verifyLicense(keep, todayISO()) : { valid: false };
+      const theirKey = data && data.settings && typeof data.settings.licenseKey === 'string' ? data.settings.licenseKey : '';
+      const theirs = theirKey ? await verifyLicense(theirKey, todayISO()) : { valid: false };
+      if (theirs.valid && (!mine.valid || theirs.payload.exp > mine.payload.exp)) keep = theirKey;
+      else if (!keep) keep = theirKey;
+    } catch (err) { console.warn(err); }
+    try { await importAll(data, keep); await refreshLicense(); toast('Backup restored'); navigate('/due'); } catch (err) { setChildren(result, h('div', { class: 'notice warn' }, err.message)); }
   };
   const importCsv = async () => {
     const file = await pickFile('.csv,text/csv');

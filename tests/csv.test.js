@@ -65,13 +65,12 @@ test('an inch mark inside a field does not swallow the following rows', () => {
 });
 
 test('dates: trailing time accepted, two-digit years resolved to the past, junk reported', () => {
-  const now = new Date('2026-10-06T12:00:00');
-  assert.equal(normaliseDate('10/6/2026 14:00', now), '2026-10-06');
-  assert.equal(normaliseDate('2026-10-06T09:00:00', now), '2026-10-06');
-  assert.equal(normaliseDate('1/2/69', now), '1969-01-02');
-  assert.equal(normaliseDate('1/2/26', now), '2026-01-02');
-  assert.equal(normaliseDate('13/01/2025', now), '');
-  assert.equal(normaliseDate('45931', now), '');
+  assert.equal(normaliseDate('10/6/2026 14:00'), '2026-10-06');
+  assert.equal(normaliseDate('2026-10-06T09:00:00'), '2026-10-06');
+  assert.equal(normaliseDate('5/6/27'), '2027-05-06'); // read as 20xx; a future date is rejected on import
+  assert.equal(normaliseDate('1/2/26'), '2026-01-02');
+  assert.equal(normaliseDate('13/01/2025'), '');
+  assert.equal(normaliseDate('45931'), '');
   const rows = parseCSV('Customer,Type,Serial,Last test date\nA,RP,1,Jan 5 2025\nB,RP,2,1/1/2099\nC,RP,3,3/3/2025\n');
   const out = importRows(rows, (() => { let n = 0; return () => 'i' + (++n); })(), undefined, '2026-10-06');
   assert.equal(out.assemblies[0].lastTestedImported, '');

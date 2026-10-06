@@ -60,7 +60,7 @@ function errorView(err) {
   console.error(err);
   return h('section', null,
     h('h1', null, 'This screen could not be shown'),
-    h('p', null, 'Your records are safe. Go back and try again. If it keeps happening, make a backup in Settings and send it with this message to support:'),
+    h('p', null, 'Your records are safe. Go back and try again. If it keeps happening, make a backup in Settings for safe keeping and report this message:'),
     h('pre', { class: 'error' }, String(err && err.message ? err.message : err)));
 }
 
@@ -81,7 +81,7 @@ async function boot() {
   // A failed write must never pass silently: the tester has to know the record did not save.
   window.addEventListener('unhandledrejection', (e) => {
     console.error(e.reason);
-    toast('That did not save. Storage on this device may be full or blocked. What you entered is still on screen.');
+    toast('That did not save. Storage on this device may be full or blocked. What you entered is still on screen.', { error: true });
   });
   // Coming back to this tab: pick up anything changed in another tab or window.
   document.addEventListener('visibilitychange', async () => {

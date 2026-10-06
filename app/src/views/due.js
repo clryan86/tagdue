@@ -1,4 +1,4 @@
-import { h, sheet, toast } from '../dom.js';
+import { h, sheet, toast, phoneDigits, mailAddress } from '../dom.js';
 import { state, byId, put } from '../store.js';
 import { compareStanding, formatDate, fillTemplate, todayISO } from '../domain/due.js';
 import { navigate, rerender, currentEntitlement } from '../nav.js';
@@ -127,17 +127,17 @@ function remind(a, s) {
       h('div', { class: 'row' },
         c.email ? h('a', {
           class: 'btn primary',
-          href: `mailto:${encodeURIComponent(c.email)}?subject=${encodeURIComponent(subject.value)}&body=${encodeURIComponent(body.value)}`,
+          href: `mailto:${mailAddress(c.email)}?subject=${encodeURIComponent(subject.value)}&body=${encodeURIComponent(body.value)}`,
           onClick: async (e) => {
-            e.currentTarget.href = `mailto:${encodeURIComponent(c.email)}?subject=${encodeURIComponent(subject.value)}&body=${encodeURIComponent(body.value)}`;
+            e.currentTarget.href = `mailto:${mailAddress(c.email)}?subject=${encodeURIComponent(subject.value)}&body=${encodeURIComponent(body.value)}`;
             await mark(); dlg.close(); rerender();
           },
         }, 'Open in email') : null,
         c.phone ? h('a', {
           class: 'btn',
-          href: `sms:${c.phone.replace(/[^\d+]/g, '')}?&body=${encodeURIComponent(body.value)}`,
+          href: `sms:${phoneDigits(c.phone)}?&body=${encodeURIComponent(body.value)}`,
           onClick: async (e) => {
-            e.currentTarget.href = `sms:${c.phone.replace(/[^\d+]/g, '')}?&body=${encodeURIComponent(body.value)}`;
+            e.currentTarget.href = `sms:${phoneDigits(c.phone)}?&body=${encodeURIComponent(body.value)}`;
             await mark(); dlg.close(); rerender();
           },
         }, 'Send as text') : null,

@@ -1,4 +1,4 @@
-import { h, field, toast, confirmDialog } from '../dom.js';
+import { h, field, toast, confirmDialog, phoneDigits, mailAddress } from '../dom.js';
 import { state, byId, put, remove } from '../store.js';
 import { ASSEMBLY_TYPES } from '../domain/rules.js';
 import { compareStanding, formatDate, isISODate } from '../domain/due.js';
@@ -47,8 +47,8 @@ export function customerView(id) {
     h('div', { class: 'row between' }, h('h1', null, c.name), h('a', { class: 'btn small', href: `#/customer/${id}/edit` }, 'Edit')),
     h('dl', { class: 'facts' },
       fact('Contact', c.contact),
-      fact('Phone', c.phone, c.phone ? `tel:${c.phone.replace(/[^\d+]/g, '')}` : null),
-      fact('Email', c.email, c.email ? `mailto:${encodeURIComponent(c.email)}` : null),
+      fact('Phone', c.phone, phoneDigits(c.phone) ? `tel:${phoneDigits(c.phone)}` : null),
+      fact('Email', c.email, c.email ? `mailto:${mailAddress(c.email)}` : null),
       fact('Address', [c.address, c.city, c.state, c.zip].filter(Boolean).join(', ')),
       fact('Notes', c.notes)),
     h('div', { class: 'row between' }, h('h2', null, 'Assemblies'), h('a', { class: 'btn primary small', href: `#/assembly/new/${id}` }, 'Add an assembly')),

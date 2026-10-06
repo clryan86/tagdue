@@ -140,16 +140,37 @@ export function saveSettings(...keys) {
   });
 }
 
-/** Re-read everything from storage, to pick up changes made in another tab or window. */
-export async function reload() {
-  if (!db) return;
-  for (const c of COLLECTIONS) state[c] = await getAll(c);
-  const saved = await new Promise((resolve, reject) => {
-    const req = db.transaction('meta').objectStore('meta').get('settings');
-    req.onsuccess = () => resolve(req.result);
-    req.onerror = () => reject(req.error);
+/** Re-read everything from storage in one transaction, to pick up changes made in another tab or window. */
+export function reload() {
+  if (!db) return Promise.resolve();
+  return new Promise((resolve, reject) => {
+    const t = db.transaction([...COLLECTIONS, 'meta']);
+    const fresh = {};
+    let savedSettings;
+    for (const c of COLLECTIONS) {
+      const req = t.objectStore(c).getAll();
+      req.onsuccess = () => { fresh[c] = req.result; };
+    }
+    const sreq = t.objectStore('meta').get('settings');
+    sreq.onsuccess = () => { savedSettings = sreq.result; };
+    t.oncomplete = () => {
+      for (const c of COLLECTIONS) state[c] = fresh[c] || [];
+      state.settings = mergeSettings(savedSettings);
+      resolve();
+    };
+    t.onerror = () => reject(t.error);
+    t.onabort = () => reject(t.error || new Error('Storage transaction aborted'));
   });
-  state.settings = mergeSettings(saved);
+}
+
+/** Unsaved form drafts live in localStorage. Remove them all. */
+export function clearDrafts() {
+  try {
+    for (let i = localStorage.length - 1; i >= 0; i--) {
+      const k = localStorage.key(i);
+      if (k && k.startsWith('tagdue-draft-')) localStorage.removeItem(k);
+    }
+  } catch { /* storage blocked: nothing to clear */ }
 }
 
 export const byId = (collection, id) => state[collection].find((r) => r.id === id) || null;
@@ -161,7 +182,7 @@ export function exportAll() {
 }
 
 /** Replace everything on this device with the contents of a backup. Validates first. */
-export async function importAll(data) {
+export async function importAll(data, licenseKey) {
   if (!data || data.app !== 'TagDue' || data.format !== 1) throw new Error('This file is not a TagDue backup');
   for (const c of COLLECTIONS) {
     if (!Array.isArray(data[c])) throw new Error(`The backup is missing its ${c} list`);
@@ -176,7 +197,7 @@ export async function importAll(data) {
   }
   // Keep the licence already on this device: restoring an older backup must not lock a paying shop out.
   const restored = mergeSettings(data.settings);
-  if (state.settings.licenseKey) restored.licenseKey = state.settings.licenseKey;
+  restored.licenseKey = licenseKey !== undefined ? licenseKey : (state.settings.licenseKey || restored.licenseKey);
   await tx([...COLLECTIONS, 'meta'], 'readwrite', (t) => {
     for (const c of COLLECTIONS) {
       const s = t.objectStore(c);
@@ -187,6 +208,7 @@ export async function importAll(data) {
   });
   for (const c of COLLECTIONS) state[c] = data[c];
   state.settings = restored;
+  clearDrafts();
 }
 
 export async function clearAll() {
@@ -196,4 +218,5 @@ export async function clearAll() {
   });
   for (const c of COLLECTIONS) state[c] = [];
   state.settings = defaultSettings();
+  clearDrafts();
 }

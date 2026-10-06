@@ -80,7 +80,7 @@ export function normaliseType(raw) {
 }
 
 /** Accepts YYYY-MM-DD, M/D/YYYY, M/D/YY and M-D-YYYY, each optionally followed by a time. Returns ISO or ''. */
-export function normaliseDate(raw, now = new Date()) {
+export function normaliseDate(raw) {
   const s = String(raw || '').trim();
   if (!s) return '';
   let m = s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})(?:[T ].*)?$/);
@@ -90,7 +90,9 @@ export function normaliseDate(raw, now = new Date()) {
     m = s.match(/^(\d{1,2})[/\-.](\d{1,2})[/\-.](\d{2}|\d{4})(?:\s+\d.*)?$/);
     if (!m) return '';
     mo = +m[1]; d = +m[2]; y = +m[3];
-    if (y < 100) y += y <= now.getFullYear() % 100 ? 2000 : 1900;
+    // Two-digit years are read as 20xx. One that lands in the future is then caught as a mistake
+    // by the caller, instead of quietly becoming a date a century ago.
+    if (y < 100) y += 2000;
   }
   const dt = new Date(Date.UTC(y, mo - 1, d));
   if (dt.getUTCFullYear() !== y || dt.getUTCMonth() !== mo - 1 || dt.getUTCDate() !== d) return '';
@@ -108,6 +110,11 @@ export function mapHeaders(headerRow) {
   return map;
 }
 
+function localToday() {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+
 /**
  * Turn a spreadsheet of assemblies (one row per device) into customers and assemblies.
  * Rows sharing a customer name and address become one customer. Customers and
@@ -117,7 +124,7 @@ export function mapHeaders(headerRow) {
  * @returns {{customers, assemblies, skipped: Array<{row:number, reason:string}>, unmapped: string[], rowsRead: number}}
  *   `skipped` holds every row that was left out or needs checking.
  */
-export function importRows(rows, makeId, existing = { customers: [], assemblies: [] }, today = new Date().toISOString().slice(0, 10)) {
+export function importRows(rows, makeId, existing = { customers: [], assemblies: [] }, today = localToday()) {
   if (!rows.length) return { customers: [], assemblies: [], skipped: [], unmapped: [], rowsRead: 0 };
   const map = mapHeaders(rows[0]);
   const mappedIdx = new Set(Object.values(map));
