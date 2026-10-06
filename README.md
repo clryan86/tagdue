@@ -4,7 +4,7 @@ Test reports and due-date tracking for independent backflow testers. It runs
 in a phone, tablet or desktop browser, installs to the home screen, and keeps
 working with no signal.
 
-- `index.html`, `site.css`: the public landing page
+- `index.html`, `privacy.html`, `site.css`: the public landing and privacy pages
 - `app/`: the application (open `app/` in a browser)
 
 ## What it does
@@ -25,6 +25,8 @@ working with no signal.
   tester's signature, as a PDF built on the device.
 - **Due board**: failed, overdue, next 30 days, 31 to 60 days. Reminder
   messages open in the tester's own email or text app.
+- **Filing record**: date filed, confirmation number and portal fee per
+  report, with a "not filed yet" list.
 - **Values for a portal**: every reported value with a copy button, for
   re-keying into a water system's online form.
 - **Import and export**: CSV in, CSV out, full backup and restore as one file.

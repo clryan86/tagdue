@@ -303,3 +303,7 @@ dialog.sheet h2 { margin: 0 0 8px; }
   .topbar, .row, .back, #toast { display: none !important; }
   body { background: #fff; }
 }
+
+.steps { padding-left: 22px; max-width: 68ch; }
+.steps li { margin-bottom: 12px; }
+.panel h3 { margin-top: 12px; }

@@ -1,6 +1,6 @@
 // Offline support: every file the app needs is stored on the device at install.
 // VERSION and ASSETS are written by tools/stamp-sw.mjs. Do not edit by hand.
-const VERSION = '49f6f6a896a2';
+const VERSION = '8f61a7387702';
 const ASSETS = ["./","./app.css","./icons/icon-192.png","./icons/icon-512.png","./icons/icon-maskable-512.png","./icons/icon.svg","./index.html","./manifest.webmanifest","./src/config.js","./src/dom.js","./src/domain/csv.js","./src/domain/due.js","./src/domain/license.js","./src/domain/rules.js","./src/main.js","./src/nav.js","./src/pdf.js","./src/sample.js","./src/store.js","./src/views/customers.js","./src/views/due.js","./src/views/reports.js","./src/views/settings.js","./src/views/shared.js","./src/views/test.js","./vendor/pdf-lib.esm.min.js"];
 
 const CACHE = 'tagdue-' + VERSION;

@@ -138,6 +138,11 @@ try {
   const pdf = await readFile(pdfPath);
   ok(pdf.subarray(0, 5).toString() === '%PDF-' && pdf.length > 3000, `PDF downloaded (${dl.suggestedFilename()}, ${pdf.length} bytes)`);
 
+  // Filing record
+  await page.getByRole('button', { name: 'Filed today' }).click();
+  await page.getByText(/^Filed /).first().waitFor();
+  ok(await page.evaluate(async () => !!(await import('./src/store.js')).state.tests[0].filedOn), 'report can be marked as filed');
+
   // Portal values
   await page.getByRole('button', { name: 'Copy values for a portal' }).click();
   ok(await page.locator('.copylist li').count() > 10, 'portal value list opens');

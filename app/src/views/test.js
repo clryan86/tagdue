@@ -280,6 +280,16 @@ function segmented(options, current, onChange, groupLabel) {
     });
     return b;
   });
+  // Arrow keys move between the choices, as with any radio group.
+  wrap.addEventListener('keydown', (e) => {
+    if (!['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'].includes(e.key)) return;
+    const i = buttons.indexOf(document.activeElement);
+    if (i < 0) return;
+    e.preventDefault();
+    const next = buttons[(i + (e.key === 'ArrowLeft' || e.key === 'ArrowUp' ? -1 : 1) + buttons.length) % buttons.length];
+    next.focus();
+    if (!next.classList.contains('on')) next.click();
+  });
   wrap.append(...buttons);
   return wrap;
 }
@@ -403,6 +413,7 @@ export function reportView(id) {
       [h('dt', null, 'Tester'), h('dd', null, [snap.tester?.name, snap.tester?.certNo].filter(Boolean).join(', '))],
       [h('dt', null, 'Test kit'), h('dd', null, [snap.gauge?.make, snap.gauge?.model, snap.gauge?.serial ? '#' + snap.gauge.serial : '', snap.gauge?.verified ? 'verified ' + formatDate(snap.gauge.verified) : ''].filter(Boolean).join(' '))],
       t.remarks ? [h('dt', null, 'Remarks'), h('dd', null, t.remarks)] : null),
+    filingPanel(t),
     h('div', { class: 'row' },
       h('a', { class: 'btn small', href: `#/test/${t.id}/edit` }, 'Correct this report'),
       h('button', {
@@ -414,6 +425,36 @@ export function reportView(id) {
           navigate(`/assembly/${t.assemblyId}`);
         },
       }, 'Delete report')));
+}
+
+/** Where and when the report was sent to the water system. Kept beside the report, never printed on it. */
+function filingPanel(t) {
+  const f = { filedOn: t.filedOn || '', filingRef: t.filingRef || '', filingFee: t.filingFee || '' };
+  const error = h('p', { class: 'form-error', role: 'alert' });
+  const save = async (e) => {
+    e.preventDefault();
+    error.textContent = '';
+    if (f.filedOn && !isISODate(f.filedOn)) { error.textContent = 'The filing date is not a real date.'; return; }
+    if (f.filedOn && f.filedOn < t.date) { error.textContent = 'The filing date is before the test date.'; return; }
+    const fee = String(f.filingFee).trim().replace(/^\$/, '');
+    if (fee && !/^\d+(\.\d{1,2})?$/.test(fee)) { error.textContent = 'Enter the fee as an amount, such as 12.95.'; return; }
+    const live = byId('tests', t.id);
+    if (!live) return;
+    live.filedOn = f.filedOn; live.filingRef = f.filingRef.trim(); live.filingFee = fee;
+    try { await put('tests', live); } catch (err) { console.error(err); error.textContent = 'That did not save. Storage on this device may be full or blocked.'; return; }
+    toast(f.filedOn ? 'Marked as filed' : 'Filing details saved');
+    rerender();
+  };
+  return h('form', { class: 'panel', onSubmit: save, novalidate: true },
+    h('h3', null, 'Filed with the water system ', t.filedOn ? h('span', { class: 'badge pass' }, `Filed ${formatDate(t.filedOn)}`) : h('span', { class: 'badge incomplete' }, 'Not filed yet')),
+    h('div', { class: 'grid3' },
+      field('Date filed', f, 'filedOn', { type: 'date', optional: true }),
+      field('Confirmation number', f, 'filingRef', { optional: true }),
+      field('Portal fee paid ($)', f, 'filingFee', { optional: true, inputmode: 'decimal', maxlength: 8 })),
+    error,
+    h('div', { class: 'row' },
+      h('button', { class: 'btn small', type: 'submit' }, 'Save filing details'),
+      !t.filedOn ? h('button', { class: 'btn small primary', type: 'button', onClick: (e) => { f.filedOn = todayISO(); save(e); } }, 'Filed today') : null));
 }
 
 /** Values laid out for re-keying into a water system's online portal, each with a copy button. */

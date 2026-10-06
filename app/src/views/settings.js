@@ -19,6 +19,7 @@ export function settingsView(section) {
     case 'reminder': return reminderView();
     case 'data': return dataView();
     case 'licence': return licenceView();
+    case 'help': return helpView();
     default: return home();
   }
 }
@@ -37,6 +38,7 @@ function home() {
       item('#/settings/reminder', 'Reminder message', 'What customers get when a test is coming due'),
       item('#/settings/data', 'Your data', state.settings.lastBackup ? `Last backup ${formatDate(state.settings.lastBackup)}` : 'Back up, restore, import and export'),
       item('#/settings/licence', 'Licence', e.mode === 'licensed' ? `Licensed until ${formatDate(e.until)}` : e.mode === 'trial' ? `Free trial, ${e.left} of ${TRIAL_REPORTS} reports left` : 'Enter a licence key')),
+    h('ul', { class: 'rows' }, item('#/settings/help', 'How TagDue works', 'A two-minute guide, and how to put it on your home screen')),
     h('p', { class: 'quiet' }, `TagDue ${CONFIG.version}. Your records are stored on this device only.`));
 }
 
@@ -299,4 +301,22 @@ function licenceView() {
     field('Licence key', draft, 'key', { multiline: true, rows: 4, placeholder: 'TD1…' }),
     error,
     h('button', { class: 'btn primary', type: 'submit' }, 'Save licence key')));
+}
+
+function helpView() {
+  const step = (title, text) => h('li', null, h('strong', null, title), h('br'), text);
+  return h('section', null, backLink('#/settings', 'Settings'), h('h1', null, 'How TagDue works'),
+    h('ol', { class: 'steps' },
+      step('Set up once.', 'Add your company, each tester’s certification and your test kit under Settings. They print on every report.'),
+      step('Add your customers and assemblies.', 'Type them in, or import the spreadsheet you already keep under Settings, Your data. Give each assembly its last test date and TagDue works out when it is next due.'),
+      step('On site, open the assembly and start a test.', 'Type each reading. TagDue says straight away whether it passes and why. If it fails and you fix it, tick the repair box and enter the retest on the same report.'),
+      step('Sign and save.', 'Share or download the PDF for the customer and the water system. If the city uses an online portal, use "Copy values for a portal" and paste them in.'),
+      step('Mark it filed.', 'Record the date and any confirmation number on the report. The Reports screen shows what has not been filed yet.'),
+      step('Next year, the Due screen tells you who to call.', 'Tap Remind to send the customer a message from your own email or phone.')),
+    h('h2', null, 'Put it on your home screen'),
+    h('p', null, 'On an iPhone or iPad, open TagDue in Safari, tap Share, then "Add to Home Screen". On Android, open it in Chrome, tap the menu, then "Install app" or "Add to Home screen". It then opens like any other app and works with no signal.'),
+    h('h2', null, 'Keep a backup'),
+    h('p', null, 'Your records live on this device only. Once a week, go to Settings, Your data, and save a backup file somewhere off the device. To move to a new phone, restore that file on it.'),
+    h('h2', null, 'Your judgment comes first'),
+    h('p', null, 'TagDue checks readings against published field-test criteria and the rules you choose in Settings. It does not replace your certification, your procedure or what your water system requires. You can always set the result yourself; the report then says so and gives your reason.'));
 }
